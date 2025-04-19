@@ -1,9 +1,16 @@
 // src/Context/TaskContext.js
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+    createContext,
+    useContext,
+    useEffect,
+    useState
+} from "react";
 import { supabase } from "../../lib/supabaseClient";
 
 const TaskContext = createContext();
+
+// const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 export const useTaskContext = () => useContext(TaskContext);
 

@@ -1,9 +1,9 @@
 // src/Components/TaskList.jsx
 
-import React, { useState } from 'react';
-import { useTaskContext } from '../assets/Context/TaskContext';
-import DeleteModal from '../assets/Modals/DeleteModal';
-import EditModal from '../assets/Modals/EditModal';
+import React, { useState } from "react";
+import { useTaskContext } from "../assets/Context/TaskContext";
+import DeleteModal from "../assets/Modals/DeleteModal";
+import EditModal from "../assets/Modals/EditModal";
 
 function TaskList() {
   const { filteredTasks, updateTaskStatus } = useTaskContext();

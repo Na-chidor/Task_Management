@@ -1,59 +1,46 @@
-// DeleteModal.jsx
-import React, { useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
-import { toast } from 'react-toastify'; // Import toast
+// src/components/DeleteModal.jsx
 
-function DeleteModal({ isOpen, closeModal, taskId, refreshTasks }) {
+import React, { useState } from "react";
+import { useTaskContext } from "../Context/TaskContext";
+import { toast } from "react-toastify";
+
+const DeleteModal = ({ isOpen, onClose, taskId }) => {
+  const { deleteTask } = useTaskContext();
   const [loading, setLoading] = useState(false);
 
   const handleDelete = async () => {
     setLoading(true);
-
-    const { error } = await supabase
-      .from('Task')
-      .delete()
-      .eq('id', taskId);
-
-    if (error) {
-      console.error('Error deleting task:', error.message);
-    } else {
-      toast.success("Task deleted successfully!");
-      if (refreshTasks) refreshTasks();
-      closeModal();
-    }
-
+    await deleteTask(taskId);
+    toast.success("Task deleted");
+    onClose();
     setLoading(false);
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className={`modal ${isOpen ? 'block' : 'hidden'} fixed inset-0 z-10 overflow-y-auto`}>
-      <div className="modal-container bg-white w-full md:w-1/3 mx-auto mt-20 p-6 rounded shadow-lg">
-        <div className="modal-header flex justify-between items-center">
-          <h3 className="text-lg font-semibold">Confirm Delete</h3>
-          <button className="text-gray-500 hover:text-gray-800" onClick={closeModal}>X</button>
-        </div>
-        <div className="modal-body mt-4">
-          <p>Are you sure you want to delete this task?</p>
-          <div className="flex justify-end mt-4">
-            <button
-              className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded mr-2"
-              onClick={handleDelete}
-              disabled={loading}
-            >
-              {loading ? 'Deleting...' : 'Delete'}
-            </button>
-            <button
-              className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
-              onClick={closeModal}
-              disabled={loading}
-            >
-              Cancel
-            </button>
-          </div>
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
+      <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-md">
+        <h2 className="text-lg font-semibold mb-4">Delete Task</h2>
+        <p className="mb-6">Are you sure you want to delete this task?</p>
+        <div className="flex justify-end space-x-4">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={loading}
+            className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+          >
+            {loading ? "Deleting..." : "Delete"}
+          </button>
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default DeleteModal;

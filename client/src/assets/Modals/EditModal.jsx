@@ -1,72 +1,86 @@
-// EditModal.jsx
-import React, { useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
-import { toast } from 'react-toastify'; // Import toast
+// src/components/EditModal.jsx
 
-function EditModal({ isOpen, closeModal, taskId, initialTitle = '', refreshTasks }) {
-  const [title, setTitle] = useState(initialTitle);
+import React, { useEffect, useState } from "react";
+import { useTaskContext } from "../Context/TaskContext";
+import { toast } from "react-toastify";
+
+const EditModal = ({ isOpen, onClose, task }) => {
+  const { editTask } = useTaskContext();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [status, setStatus] = useState("to-do");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!title.trim()) return;
+  useEffect(() => {
+    if (task) {
+      setTitle(task.task || "");
+      setDescription(task.description || "");
+      setStatus(task.status || "to-do");
+    }
+  }, [task]);
 
+  const handleSave = async () => {
+    if (!title.trim()) return toast.error("Title is required");
     setLoading(true);
 
-    const { error } = await supabase
-      .from('Task')
-      .update({ task: title })
-      .eq('id', taskId);
-
-    if (error) {
-      console.error('Error updating task:', error.message);
-    } else {
-      toast.success("Task updated successfully!");
-      if (refreshTasks) refreshTasks(); // Refresh task list after update
-      closeModal();
-    }
-
+    await editTask(task.id, title, description, status);
+    toast.success("Task updated!");
+    onClose();
     setLoading(false);
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className={`modal ${isOpen ? 'block' : 'hidden'} fixed inset-0 z-10 overflow-y-auto`}>
-      <div className="modal-container bg-white w-full md:w-1/3 mx-auto mt-20 p-6 rounded shadow-lg">
-        <div className="modal-header flex justify-between items-center">
-          <h3 className="text-lg font-semibold">Edit Task</h3>
-          <button className="text-gray-500 hover:text-gray-800" onClick={closeModal}>X</button>
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
+      <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-md">
+        <div className="flex justify-between mb-4">
+          <h2 className="text-lg font-bold">Edit Task</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-black">✕</button>
         </div>
-        <div className="modal-body mt-4">
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="title">Title</label>
+        <div className="space-y-4">
+          <div>
+            <label className="block font-medium">Title</label>
             <input
-              className="border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="title"
-              type="text"
+              className="w-full border px-3 py-2 rounded"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               disabled={loading}
             />
           </div>
-          <div className="flex justify-end mt-4">
-            <button
-              className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mr-2"
-              onClick={handleSubmit}
+          <div>
+            <label className="block font-medium">Description</label>
+            <textarea
+              className="w-full border px-3 py-2 rounded"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               disabled={loading}
-            >
-              {loading ? 'Saving...' : 'Save'}
-            </button>
-            <button
-              className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
-              onClick={closeModal}
-              disabled={loading}
-            >
-              Cancel
-            </button>
+            />
           </div>
+          <div>
+            <label className="block font-medium">Status</label>
+            <select
+              className="w-full border px-3 py-2 rounded"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              disabled={loading}
+            >
+              <option value="to-do">To Do</option>
+              <option value="in-progress">In Progress</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+          >
+            {loading ? "Saving..." : "Save Changes"}
+          </button>
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default EditModal;

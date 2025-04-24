@@ -1,16 +1,9 @@
 // src/Context/TaskContext.js
 
-import React, {
-    createContext,
-    useContext,
-    useEffect,
-    useState
-} from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
 const TaskContext = createContext();
-
-// const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 export const useTaskContext = () => useContext(TaskContext);
 
@@ -85,16 +78,7 @@ export const TaskProvider = ({ children }) => {
       return;
     }
 
-    const newTask = data[0];
-    setTasks((prev) => [newTask, ...prev]);
-    setFilteredTasks((prev) => [newTask, ...prev]);
-    setTotalTasks((prev) => prev + 1);
-
-    if (status === "completed") {
-      setCompletedTasks((prev) => prev + 1);
-    } else {
-      setTodoTasks((prev) => prev + 1);
-    }
+    fetchData(user.id); // Refresh tasks
   };
 
   const deleteTask = async (taskId) => {
@@ -104,14 +88,7 @@ export const TaskProvider = ({ children }) => {
       return;
     }
 
-    const updatedTasks = tasks.filter((task) => task.id !== taskId);
-    setTasks(updatedTasks);
-    setFilteredTasks(updatedTasks);
-    setTotalTasks(updatedTasks.length);
-
-    const completedCount = updatedTasks.filter((task) => task.status === "completed").length;
-    setCompletedTasks(completedCount);
-    setTodoTasks(updatedTasks.length - completedCount);
+    fetchData(user.id); // Refresh tasks
   };
 
   const editTask = async (taskId, updatedTitle, updatedDescription, updatedStatus) => {
@@ -127,22 +104,8 @@ export const TaskProvider = ({ children }) => {
     if (error) {
       console.error("Error editing task:", error);
     } else {
-      fetchData(user.id);
+      fetchData(user.id); // Refresh tasks
     }
-  };
-
-  const updateTaskStatus = async (taskId, status) => {
-    const { error } = await supabase
-      .from("Task")
-      .update({ status })
-      .eq("id", taskId);
-
-    if (error) {
-      console.error("Error updating task status:", error);
-      return;
-    }
-
-    fetchData(user.id);
   };
 
   return (
@@ -156,7 +119,6 @@ export const TaskProvider = ({ children }) => {
         addTask,
         deleteTask,
         editTask,
-        updateTaskStatus,
         fetchData,
         user,
       }}

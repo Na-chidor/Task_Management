@@ -23,12 +23,12 @@ function Navbar() {
         <span className="text-white text-lg font-bold">Task Manager</span>
         <div className="flex gap-2">
           <button
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded cursor-pointer"
             onClick={openModal}>
             Add
           </button>
           <button
-            className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+            className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded cursor-pointer"
             onClick={handleLogout}>
             Logout
           </button>

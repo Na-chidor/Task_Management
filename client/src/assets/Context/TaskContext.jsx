@@ -1,10 +1,7 @@
-// src/Context/TaskContext.js
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
 const TaskContext = createContext();
-
 export const useTaskContext = () => useContext(TaskContext);
 
 export const TaskProvider = ({ children }) => {
@@ -13,42 +10,66 @@ export const TaskProvider = ({ children }) => {
   const [totalTasks, setTotalTasks] = useState(0);
   const [completedTasks, setCompletedTasks] = useState(0);
   const [todoTasks, setTodoTasks] = useState(0);
+  const [inProgressTasks, setInProgressTasks] = useState(0);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Fetch user on mount
   useEffect(() => {
     const getUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (data?.user) {
+      try {
+        setLoading(true);
+        const { data, error: authError } = await supabase.auth.getUser();
+        
+        if (authError) throw authError;
+        if (!data?.user) throw new Error("No user logged in");
+
         setUser(data.user);
-        fetchData(data.user.id);
-      } else {
-        console.error("No user logged in:", error?.message);
+        await fetchData(data.user.id);
+      } catch (err) {
+        console.error("Authentication error:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
     };
+
     getUser();
   }, []);
 
+  // Fetch tasks from Supabase
   const fetchData = async (userId) => {
-    const { data, error } = await supabase
-      .from("Task")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+    try {
+      setLoading(true);
+      const { data, error: fetchError } = await supabase
+        .from("Task")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching tasks:", error);
-      return;
+      if (fetchError) throw fetchError;
+
+      setTasks(data || []);
+      setFilteredTasks(data || []);
+      setTotalTasks(data?.length || 0);
+
+      const completedCount = data?.filter(t => t.status === "completed").length || 0;
+      const todoCount = data?.filter(t => t.status === "to-do").length || 0;
+      const inProgressCount = data?.filter(t => t.status === "in-progress").length || 0;
+
+      setCompletedTasks(completedCount);
+      setTodoTasks(todoCount);
+      setInProgressTasks(inProgressCount);
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    setTasks(data);
-    setFilteredTasks(data);
-    setTotalTasks(data.length);
-
-    const completedCount = data.filter((task) => task.status === "completed").length;
-    setCompletedTasks(completedCount);
-    setTodoTasks(data.length - completedCount);
   };
 
+  // Filter tasks based on status
   const handleFilterClick = (status) => {
     if (status === "all") {
       setFilteredTasks(tasks);
@@ -58,69 +79,93 @@ export const TaskProvider = ({ children }) => {
     }
   };
 
+  // Add a new task
   const addTask = async (title, description, status) => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from("Task")
-      .insert([
-        {
-          task: title,
-          description,
-          status,
-          user_id: user.id,
-        },
-      ])
-      .select();
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("Task")
+        .insert([
+          {
+            task: title,
+            description,
+            status,
+            user_id: user.id,
+          },
+        ])
+        .select();
 
-    if (error) {
-      console.error("Error adding task:", error);
-      return;
+      if (error) throw error;
+
+      await fetchData(user.id);
+    } catch (err) {
+      console.error("Error adding task:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    fetchData(user.id); // Refresh tasks
   };
 
+  // Delete a task
   const deleteTask = async (taskId) => {
-    const { error } = await supabase.from("Task").delete().eq("id", taskId);
-    if (error) {
-      console.error("Error deleting task:", error);
-      return;
+    try {
+      setLoading(true);
+      const { error } = await supabase.from("Task").delete().eq("id", taskId);
+      if (error) throw error;
+      await fetchData(user.id);
+    } catch (err) {
+      console.error("Error deleting task:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    fetchData(user.id); // Refresh tasks
   };
 
+  // Edit a task
   const editTask = async (taskId, updatedTitle, updatedDescription, updatedStatus) => {
-    const { error } = await supabase
-      .from("Task")
-      .update({
-        task: updatedTitle,
-        description: updatedDescription,
-        status: updatedStatus,
-      })
-      .eq("id", taskId);
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from("Task")
+        .update({
+          task: updatedTitle,
+          description: updatedDescription,
+          status: updatedStatus,
+        })
+        .eq("id", taskId);
 
-    if (error) {
-      console.error("Error editing task:", error);
-    } else {
-      fetchData(user.id); // Refresh tasks
+      if (error) throw error;
+
+      await fetchData(user.id);
+      return true;
+    } catch (err) {
+      console.error("Error editing task:", err);
+      setError(err.message);
+      return false;
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <TaskContext.Provider
       value={{
+        tasks,
         filteredTasks,
         totalTasks,
         completedTasks,
         todoTasks,
+        inProgressTasks,
         handleFilterClick,
         addTask,
         deleteTask,
         editTask,
         fetchData,
         user,
+        loading,
+        error
       }}
     >
       {children}

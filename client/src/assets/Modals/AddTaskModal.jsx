@@ -3,17 +3,17 @@
 import React, { useState } from 'react';
 import { useTaskContext } from '../Context/TaskContext';
 import { toast } from 'react-toastify';
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardContent } from "@/Components/ui/card";
+import { Button } from "@/Components/ui/button";
+import { Input } from "@/Components/ui/input";
+import { Label } from "@/Components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/Components/ui/select";
 
 function AddTaskModal({ isOpen, closeModal }) {
   const [title, setTitle] = useState('');
